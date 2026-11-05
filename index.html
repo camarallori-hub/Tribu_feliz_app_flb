@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Código de la Tribu Feliz - Control de Puntos Familiar</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            purple: '#8B5CF6',
+                            indigo: '#6366F1',
+                            pink: '#EC4899',
+                            yellow: '#F59E0B',
+                            green: '#10B981',
+                            blue: '#3B82F6',
+                            softBg: '#F8FAFC'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Fredoka', 'sans-serif'],
+                        body: ['Nunito', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #f0f3ff 0%, #e6f0fa 100%);
+            min-height: 100vh;
+        }
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-12">
+
+    <!-- LOGIN / JOIN TRIBE SCREEN (Shown if not in a Tribe) -->
+    <div id="authScreen" class="fixed inset-0 bg-gradient-to-tr from-indigo-700 via-purple-700 to-pink-600 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl space-y-6 my-auto">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-400 to-indigo-600 text-white flex items-center justify-center text-3xl mx-auto shadow-lg shadow-indigo-300">
+                    👑
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">El Código de la Tribu Feliz</h1>
+                <p class="text-xs text-slate-500 font-semibold">Conecta todos los dispositivos de tu familia en tiempo real</p>
+            </div>
+
+            <!-- Auth Options -->
+            <div class="space-y-4">
+                <div class="flex rounded-2xl bg-slate-100 p-1">
+                    <button id="btnAuthJoin" onclick="switchAuthMode('join')" class="flex-1 py-2 text-xs font-bold rounded-xl transition bg-white text-indigo-600 shadow-sm">
+                        Unirme a una Tribu
+                    </button>
+                    <button id="btnAuthCreate" onclick="switchAuthMode('create')" class="flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-600">
+                        Crear Nueva Tribu
+                    </button>
+                </div>
+
+                <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                    <div id="fieldTribeCode">
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Código de la Tribu (6 Caracteres)</label>
+                        <input type="text" id="inputTribeCode" placeholder="Ej: TRIBU1" maxlength="6" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-center text-lg font-black tracking-widest text-indigo-700 uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div id="fieldTribeName" class="hidden">
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre de la Familia / Tribu</label>
+                        <input type="text" id="inputTribeName" placeholder="Ej: Familia López Pérez" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tu Nombre o Apodo</label>
+                        <input type="text" id="inputUserName" required placeholder="Ej: Mamá Laura, Carlos" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <button type="submit" id="btnSubmitAuth" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 transition text-sm">
+                        ¡Entrar a la Tribu! 🚀
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER (Shown after entering a Tribe) -->
+    <div id="appContainer" class="hidden">
+        <!-- Header Navigation Bar -->
+        <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-indigo-100 shadow-sm">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl shadow-md shadow-indigo-200">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <div>
+                        <h1 id="headerTribeTitle" class="text-lg md:text-xl font-bold text-slate-800 leading-tight">La Tribu Feliz</h1>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-indigo-600 font-semibold">Código:</span>
+                            <span id="badgeTribeCode" class="bg-indigo-100 text-indigo-700 font-black text-xs px-2 py-0.5 rounded-md tracking-wider">------</span>
+                            <button onclick="copyTribeCode()" class="text-xs text-slate-400 hover:text-indigo-600" title="Copiar código">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global Action Bar -->
+                <div class="flex items-center gap-2">
+                    <button onclick="openAddMemberModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-bold px-3 py-2 rounded-xl shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span class="hidden sm:inline">Nuevo Miembro</span>
+                    </button>
+                    <button onclick="openCustomActionModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-3 py-2 rounded-xl shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span class="hidden sm:inline">Nueva Acción</span>
+                    </button>
+                    <button onclick="leaveTribe()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-2 rounded-xl transition" title="Cambiar de Tribu">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="max-w-6xl mx-auto px-4 pt-6 space-y-6">
+
+            <!-- Banner / Hero Summary -->
+            <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-8 -bottom-8 opacity-15 text-white text-9xl pointer-events-none">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span class="inline-block bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
+                            ✨ Conectado en Tiempo Real
+                        </span>
+                        <h2 class="text-2xl md:text-3xl font-bold">¡Sumemos Estrellas en Equipo!</h2>
+                        <p class="text-indigo-100 text-sm mt-1 max-w-xl">
+                            Las estrellas otorgadas se sincronizan al instante en los dispositivos de toda la familia.
+                        </p>
+                    </div>
+
+                    <!-- Total Tribe Stats -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex items-center gap-4 min-w-[200px]">
+                        <div class="w-12 h-12 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center text-2xl shadow-inner font-black">
+                            ⭐
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wider text-indigo-100 font-bold">Total Tribu</div>
+                            <div id="totalTribeStars" class="text-2xl font-black">0 Puntos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex border-b border-slate-200 gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                <button id="tab-members" onclick="switchTab('members')" class="px-5 py-2.5 rounded-2xl font-bold text-sm transition flex items-center gap-2 bg-indigo-600 text-white shadow-md">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Miembros de la Tribu</span>
+                </button>
+                <button id="tab-actions" onclick="switchTab('actions')" class="px-5 py-2.5 rounded-2xl font-bold text-sm transition flex items-center gap-2 bg-white text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Acciones de Valor</span>
+                </button>
+                <button id="tab-rewards" onclick="switchTab('rewards')" class="px-5 py-2.5 rounded-2xl font-bold text-sm transition flex items-center gap-2 bg-white text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-gift"></i>
+                    <span>Tienda de Premios</span>
+                </button>
+                <button id="tab-history" onclick="switchTab('history')" class="px-5 py-2.5 rounded-2xl font-bold text-sm transition flex items-center gap-2 bg-white text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Historial en Vivo</span>
+                </button>
+            </div>
+
+            <!-- TAB CONTENT 1: MEMBERS CARDS -->
+            <div id="view-members" class="space-y-6">
+                <div id="membersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Dynamic member cards -->
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 2: ACTIONS CATALOG -->
+            <div id="view-actions" class="hidden space-y-4">
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800">Catálogo de Acciones de Valor</h3>
+                            <p class="text-xs text-slate-500">Selecciona una acción para asignar estrellas a un integrante.</p>
+                        </div>
+                        <button onclick="openCustomActionModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Nueva Acción Personalizada
+                        </button>
+                    </div>
+                    <div id="actionsCatalogGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Dynamic actions -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 3: REWARDS STORE -->
+            <div id="view-rewards" class="hidden space-y-4">
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800">🎁 Tienda de Premios</h3>
+                            <p class="text-xs text-slate-500">Recompensas para canjear con puntos acumulados.</p>
+                        </div>
+                        <button onclick="openAddRewardModal()" class="bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Crear Nuevo Premio
+                        </button>
+                    </div>
+                    <div id="rewardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Dynamic Rewards -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 4: HISTORY LOG -->
+            <div id="view-history" class="hidden space-y-4">
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">Historial de Actividad en Vivo</h3>
+                    <div id="historyList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- Dynamic history items -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: ADD / EDIT MEMBER -->
+    <div id="modalMember" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="modalMemberTitle" class="text-lg font-bold text-slate-800">Nuevo Miembro</h3>
+                <button onclick="closeModal('modalMember')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="memberForm" onsubmit="handleSaveMember(event)" class="space-y-4">
+                <input type="hidden" id="memberId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre o Apodo</label>
+                    <input type="text" id="memberName" required placeholder="Ej: Sofía, Papá" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Rol</label>
+                    <select id="memberRole" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="Hijo/a">Hijo / Hija</option>
+                        <option value="Mamá">Mamá</option>
+                        <option value="Papá">Papá</option>
+                        <option value="Tío/a">Tío / Tía</option>
+                        <option value="Abuelo/a">Abuelo / Abuela</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Avatar</label>
+                    <div id="avatarPicker" class="grid grid-cols-5 gap-2 text-center text-2xl"></div>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modalMember')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: AWARD POINTS -->
+    <div id="modalAward" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Otorgar Estrellas</h3>
+                    <p id="awardRecipientText" class="text-xs text-indigo-600 font-bold">Para: -</p>
+                </div>
+                <button onclick="closeModal('modalAward')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <label class="block text-xs font-bold text-slate-600 uppercase">Selecciona la Acción</label>
+                <div id="awardActionsList" class="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar"></div>
+            </div>
+            <div class="pt-2 flex justify-end">
+                <button type="button" onclick="closeModal('modalAward')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: REDEEM REWARD -->
+    <div id="modalRedeem" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">🎁 Canjear Recompensa</h3>
+                    <p id="redeemItemText" class="text-xs text-amber-600 font-bold">Premio: -</p>
+                </div>
+                <button onclick="closeModal('modalRedeem')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <label class="block text-xs font-bold text-slate-600 uppercase">¿Quién disfrutará el premio?</label>
+                <div id="redeemMembersList" class="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar"></div>
+            </div>
+            <div class="pt-2 flex justify-end">
+                <button type="button" onclick="closeModal('modalRedeem')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: CUSTOM ACTION -->
+    <div id="modalCustomAction" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800">Nueva Acción</h3>
+                <button onclick="closeModal('modalCustomAction')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleSaveAction(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre</label>
+                    <input type="text" id="actionName" required placeholder="Ej: Lectura nocturna" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Emoji</label>
+                        <input type="text" id="actionEmoji" required value="🌟" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Puntos</label>
+                        <input type="number" id="actionPoints" required min="1" value="15" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Descripción</label>
+                    <textarea id="actionDesc" rows="2" placeholder="Detalles..." class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modalCustomAction')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: CUSTOM REWARD -->
+    <div id="modalAddReward" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800">Nuevo Premio</h3>
+                <button onclick="closeModal('modalAddReward')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleSaveReward(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Título</label>
+                    <input type="text" id="rewardTitle" required placeholder="Ej: Salida al parque" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Emoji</label>
+                        <input type="text" id="rewardEmoji" required value="🍦" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Costo (Estrellas)</label>
+                        <input type="number" id="rewardCost" required min="5" value="50" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Descripción</label>
+                    <input type="text" id="rewardDesc" placeholder="Detalles del premio..." class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modalAddReward')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIREBASE & APPLICATION LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tribu-feliz-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const DEFAULT_AVATARS = ['👧', '👦', '🦸‍♀️', '🦸‍♂️', '👩', '👨', '👵', '👴', '🐱', '🐶', '🚀', '👑', '⭐'];
+
+        const INITIAL_ACTIONS = [
+            { id: 'act_1', title: '1. 👂 La Oreja Atenta', points: 10, emoji: '👂', link: 'Derecho: Escuchados | Deber: Escucha activa', desc: 'Escuchar mirando a los ojos sin interrumpir ni usar pantallas.' },
+            { id: 'act_2', title: '2. 🌈 Valiente Expresivo', points: 15, emoji: '🌈', link: 'Derecho: Expresión | Deber: Respeto asertivo', desc: 'Decir con calma lo que siento sin gritar ni enfadarse.' },
+            { id: 'act_3', title: '3. 🕊️ Puente de Paz', points: 20, emoji: '🕊️', link: 'Derecho: Aprender error | Deber: Reparación', desc: 'Pedir disculpas de corazón y proponer una solución activa.' },
+            { id: 'act_4', title: '4. ⌛ Guardián del Tiempo', points: 10, emoji: '⌛', link: 'Derecho: Paz personal | Deber: Respetar descanso', desc: 'Respetar el espacio de descanso y concentración de los demás.' },
+            { id: 'act_5', title: '5. 🚀 Iniciativa Propia', points: 15, emoji: '🚀', link: 'Derecho: Entorno limpio | Deber: Orden galáctico', desc: 'Ordenar cuarto o útiles sin necesidad de recordatorios.' },
+            { id: 'act_6', title: '6. 🤝 Manos Solidarias', points: 10, emoji: '🤝', link: 'Derecho: Apoyo afectivo | Deber: Ayuda mutua', desc: 'Ayudar voluntariamente en la mesa, basura o tareas del hogar.' },
+            { id: 'act_7', title: '7. ❤️ Termómetro Afectivo', points: 10, emoji: '❤️', link: 'Derecho: Amor | Deber: Demostrar cariño', desc: 'Tener un detalle o abrazo espontáneo y cariñoso en familia.' },
+            { id: 'act_8', title: '8. 🧘 Interruptor de Calma', points: 20, emoji: '🧘', link: 'Derecho: Armonía | Deber: Regla STOP', desc: 'Respirar y hacer pausa antes de reaccionar con enojo.' },
+            { id: 'act_9', title: '9. 🎉 Aplauso Sincero', points: 10, emoji: '🎉', link: 'Derecho: Valoración | Deber: Validar equipo', desc: 'Celebrar los logros y alegrías de los demás integrantes.' },
+            { id: 'act_10', title: '10. 🎯 Cumplidor Fiel', points: 15, emoji: '🎯', link: 'Derecho: Confianza | Deber: Cumplir acuerdos', desc: 'Apagar consolas o terminar tareas a la hora acordada.' }
+        ];
+
+        const INITIAL_REWARDS = [
+            { id: 'rew_1', title: '🎬 Cine en Casa & Palomitas', cost: 50, emoji: '🍿', desc: 'Elegir la película y las golosinas del fin de semana.' },
+            { id: 'rew_2', title: '👑 El Trono del Rey/Reina', cost: 75, emoji: '👑', desc: 'Elegir el menú favorito de la cena del viernes.' },
+            { id: 'rew_3', title: '🎟️ Vale Exención de 1 Tarea', cost: 100, emoji: '🎟️', desc: 'Librarse de una tarea doméstica asignada por un día.' },
+            { id: 'rew_4', title: '🍦 Salida por Helado Sorpresa', cost: 120, emoji: '🍦', desc: 'Paseo especial en familia a elegir tu sabor preferido.' }
+        ];
+
+        // State variables
+        let currentUser = null;
+        let currentTribeCode = null;
+        let tribeUnsubscribe = null;
+        let authMode = 'join'; // 'join' or 'create'
+        let selectedAvatar = '👧';
+
+        let tribeData = {
+            name: 'La Tribu Feliz',
+            members: [],
+            actions: [...INITIAL_ACTIONS],
+            rewards: [...INITIAL_REWARDS],
+            history: []
+        };
+
+        // Initialize Authentication
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUser = auth.currentUser;
+                
+                // Check if user has saved tribeCode locally
+                const savedCode = localStorage.getItem('tribu_feliz_code');
+                if (savedCode) {
+                    subscribeToTribe(savedCode);
+                }
+            } catch (err) {
+                console.error("Auth failed:", err);
+            }
+        }
+
+        // Fire on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            renderAvatarPicker();
+        });
+
+        // Auth Form Handlers
+        window.switchAuthMode = function(mode) {
+            authMode = mode;
+            const btnJoin = document.getElementById('btnAuthJoin');
+            const btnCreate = document.getElementById('btnAuthCreate');
+            const fieldCode = document.getElementById('fieldTribeCode');
+            const fieldName = document.getElementById('fieldTribeName');
+
+            if (mode === 'join') {
+                btnJoin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-white text-indigo-600 shadow-sm";
+                btnCreate.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-600";
+                fieldCode.classList.remove('hidden');
+                fieldName.classList.add('hidden');
+            } else {
+                btnCreate.className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-white text-indigo-600 shadow-sm";
+                btnJoin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-600";
+                fieldCode.classList.add('hidden');
+                fieldName.classList.remove('hidden');
+            }
+        };
+
+        window.handleAuthSubmit = async function(e) {
+            e.preventDefault();
+            if (!currentUser) await initAuth();
+
+            const userName = document.getElementById('inputUserName').value.trim();
+            if (!userName) return;
+
+            if (authMode === 'create') {
+                const tribeName = document.getElementById('inputTribeName').value.trim() || 'La Tribu Feliz';
+                const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                const newTribe = {
+                    name: tribeName,
+                    members: [{ id: 'mem_' + Date.now(), name: userName, role: 'Mamá/Papá', avatar: '👑', points: 20 }],
+                    actions: INITIAL_ACTIONS,
+                    rewards: INITIAL_REWARDS,
+                    history: [{ id: 'h1', date: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), text: `¡Tribu "${tribeName}" creada por ${userName}!`, type: 'info' }]
+                };
+
+                const tribeRef = doc(db, 'artifacts', appId, 'public', 'data', 'tribes', newCode);
+                await setDoc(tribeRef, newTribe);
+                subscribeToTribe(newCode);
+
+            } else {
+                const code = document.getElementById('inputTribeCode').value.trim().toUpperCase();
+                if (code.length !== 6) {
+                    alert('El código debe tener exactamente 6 caracteres.');
+                    return;
+                }
+
+                const tribeRef = doc(db, 'artifacts', appId, 'public', 'data', 'tribes', code);
+                const docSnap = await getDoc(tribeRef);
+
+                if (!docSnap.exists()) {
+                    alert('No se encontró ninguna tribu con ese código.');
+                    return;
+                }
+
+                // Check if user exists or add member
+                const data = docSnap.data();
+                const existing = (data.members || []).find(m => m.name.toLowerCase() === userName.toLowerCase());
+                if (!existing) {
+                    data.members.push({ id: 'mem_' + Date.now(), name: userName, role: 'Miembro', avatar: '🦸‍♂️', points: 10 });
+                    await updateDoc(tribeRef, { members: data.members });
+                }
+
+                subscribeToTribe(code);
+            }
+        };
+
+        // Real-time Firestore Subscription
+        function subscribeToTribe(code) {
+            if (tribeUnsubscribe) tribeUnsubscribe();
+
+            currentTribeCode = code;
+            localStorage.setItem('tribu_feliz_code', code);
+
+            const tribeRef = doc(db, 'artifacts', appId, 'public', 'data', 'tribes', code);
+            
+            tribeUnsubscribe = onSnapshot(tribeRef, (snap) => {
+                if (snap.exists()) {
+                    tribeData = snap.data();
+                    document.getElementById('authScreen').classList.add('hidden');
+                    document.getElementById('appContainer').classList.remove('hidden');
+                    document.getElementById('headerTribeTitle').innerText = tribeData.name || 'La Tribu Feliz';
+                    document.getElementById('badgeTribeCode').innerText = code;
+                    renderAll();
+                } else {
+                    alert('La tribu ya no está disponible.');
+                    leaveTribe();
+                }
+            }, (error) => {
+                console.error("Snapshot error:", error);
+            });
+        }
+
+        window.leaveTribe = function() {
+            if (tribeUnsubscribe) tribeUnsubscribe();
+            localStorage.removeItem('tribu_feliz_code');
+            currentTribeCode = null;
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+        };
+
+        window.copyTribeCode = function() {
+            if (!currentTribeCode) return;
+            const temp = document.createElement('textarea');
+            temp.value = currentTribeCode;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            alert(`¡Código de la Tribu ${currentTribeCode} copiado al portapapeles! Compertelo con tu familia.`);
+        };
+
+        async function syncTribeToFirestore() {
+            if (!currentTribeCode) return;
+            const tribeRef = doc(db, 'artifacts', appId, 'public', 'data', 'tribes', currentTribeCode);
+            await setDoc(tribeRef, tribeData, { merge: true });
+        }
+
+        // Render Functions
+        function renderAll() {
+            updateGlobalHeaderStats();
+            renderMembersGrid();
+            renderActionsCatalog();
+            renderRewardsGrid();
+            renderHistoryLog();
+        }
+
+        function updateGlobalHeaderStats() {
+            const total = (tribeData.members || []).reduce((acc, m) => acc + (m.points || 0), 0);
+            document.getElementById('totalTribeStars').innerText = `${total} Puntos`;
+        }
+
+        function renderMembersGrid() {
+            const grid = document.getElementById('membersGrid');
+            grid.innerHTML = '';
+
+            if (!tribeData.members || tribeData.members.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400">No hay integrantes en esta tribu aún.</div>`;
+                return;
+            }
+
+            tribeData.members.forEach(m => {
+                const level = Math.floor((m.points || 0) / 50) + 1;
+                const progressInLevel = ((m.points || 0) % 50) * 2;
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-3xl p-5 border border-slate-100 shadow-md hover:shadow-lg transition space-y-4 relative overflow-hidden";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-indigo-100 border border-indigo-200 flex items-center justify-center text-3xl shadow-inner">
+                                ${m.avatar}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-lg leading-tight">${m.name}</h4>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">${m.role}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-black text-amber-500 flex items-center justify-end gap-1">
+                                <span>${m.points}</span>
+                                <span class="text-lg">⭐</span>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase text-slate-400">Nivel ${level}</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[11px] font-bold text-slate-500">
+                            <span>Progreso Nivel ${level}</span>
+                            <span>${(m.points || 0) % 50} / 50 pts</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-gradient-to-r from-amber-400 to-indigo-500 h-2.5 rounded-full transition-all duration-500" style="width: ${progressInLevel}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center gap-2">
+                        <button onclick="openAwardModal('${m.id}')" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>Sumar Puntos</span>
+                        </button>
+                        <button onclick="deleteMember('${m.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 p-2.5 rounded-xl text-xs transition" title="Eliminar">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderActionsCatalog() {
+            const grid = document.getElementById('actionsCatalogGrid');
+            grid.innerHTML = '';
+
+            (tribeData.actions || []).forEach(a => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 hover:bg-indigo-50/40 rounded-2xl p-4 border border-slate-200/80 transition flex items-start gap-3 cursor-pointer group relative";
+                card.onclick = () => selectActionForGlobalAward(a.id);
+                card.innerHTML = `
+                    <div class="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition shrink-0">
+                        ${a.emoji}
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between gap-2">
+                            <h4 class="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition">${a.title}</h4>
+                            <span class="bg-amber-100 text-amber-800 font-extrabold text-xs px-2 py-0.5 rounded-full border border-amber-200 shrink-0">+${a.points} pts</span>
+                        </div>
+                        <p class="text-[11px] font-bold text-sky-700 mt-0.5">${a.link || ''}</p>
+                        <p class="text-xs text-slate-600 mt-1 leading-snug">${a.desc}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderRewardsGrid() {
+            const grid = document.getElementById('rewardsGrid');
+            grid.innerHTML = '';
+
+            (tribeData.rewards || []).forEach(r => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition space-y-3 flex flex-col justify-between";
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-3xl">
+                                ${r.emoji}
+                            </div>
+                            <span class="bg-amber-400 text-amber-950 font-black text-xs px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                                <span>${r.cost}</span> ⭐
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base leading-tight">${r.title}</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">${r.desc}</p>
+                    </div>
+                    <div class="pt-2">
+                        <button onclick="openRedeemModal('${r.id}')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-gift"></i>
+                            <span>Canjear Premio</span>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderHistoryLog() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+
+            if (!tribeData.history || tribeData.history.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6">Aún no hay actividades registradas.</p>`;
+                return;
+            }
+
+            [...tribeData.history].reverse().forEach(h => {
+                const item = document.createElement('div');
+                item.className = "bg-slate-50 rounded-xl p-3 border border-slate-200/60 text-xs flex items-center justify-between gap-3";
+                
+                let badgeClass = "bg-indigo-100 text-indigo-700";
+                if(h.type === 'award') badgeClass = "bg-emerald-100 text-emerald-700";
+                if(h.type === 'redeem') badgeClass = "bg-amber-100 text-amber-800";
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded-md font-bold text-[10px] uppercase ${badgeClass}">
+                            ${h.type === 'award' ? '+ Puntos' : h.type === 'redeem' ? 'Canje' : 'Info'}
+                        </span>
+                        <span class="text-slate-700 font-semibold">${h.text}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 shrink-0">${h.date}</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function renderAvatarPicker() {
+            const container = document.getElementById('avatarPicker');
+            container.innerHTML = '';
+            DEFAULT_AVATARS.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `p-2 rounded-xl border border-slate-200 hover:bg-indigo-50 transition ${selectedAvatar === emoji ? 'bg-indigo-100 border-indigo-500 ring-2 ring-indigo-400' : 'bg-white'}`;
+                btn.innerText = emoji;
+                btn.onclick = () => {
+                    selectedAvatar = emoji;
+                    renderAvatarPicker();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Global Modal Operations
+        window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+
+        window.openAddMemberModal = function() {
+            document.getElementById('memberId').value = '';
+            document.getElementById('memberName').value = '';
+            document.getElementById('memberRole').value = 'Hijo/a';
+            selectedAvatar = '👧';
+            renderAvatarPicker();
+            openModal('modalMember');
+        };
+
+        window.handleSaveMember = async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('memberName').value.trim();
+            const role = document.getElementById('memberRole').value;
+            if (!name) return;
+
+            tribeData.members = tribeData.members || [];
+            tribeData.members.push({
+                id: 'mem_' + Date.now(),
+                name: name,
+                role: role,
+                avatar: selectedAvatar,
+                points: 0
+            });
+
+            logHistory(`Se unió a la tribu: ${name} (${role})`, 'info');
+            await syncTribeToFirestore();
+            closeModal('modalMember');
+        };
+
+        window.deleteMember = async function(id) {
+            const m = tribeData.members.find(x => x.id === id);
+            if (!m) return;
+            if (confirm(`¿Seguro que deseas eliminar a ${m.name}?`)) {
+                tribeData.members = tribeData.members.filter(x => x.id !== id);
+                logHistory(`Se eliminó a ${m.name} de la tribu.`, 'info');
+                await syncTribeToFirestore();
+            }
+        };
+
+        window.openAwardModal = function(memberId) {
+            const m = tribeData.members.find(x => x.id === memberId);
+            if(!m) return;
+
+            document.getElementById('awardRecipientText').innerText = `Para: ${m.avatar} ${m.name}`;
+            const list = document.getElementById('awardActionsList');
+            list.innerHTML = '';
+
+            (tribeData.actions || []).forEach(a => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left bg-slate-50 hover:bg-emerald-50 rounded-xl p-3 border border-slate-200 transition flex items-center justify-between gap-2 group";
+                btn.onclick = () => executeAward(m.id, a.id);
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl">${a.emoji}</span>
+                        <div>
+                            <div class="font-bold text-xs text-slate-800 group-hover:text-emerald-700">${a.title}</div>
+                            <div class="text-[10px] text-slate-500">${a.desc.substring(0, 45)}...</div>
+                        </div>
+                    </div>
+                    <span class="bg-emerald-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shrink-0">+${a.points} pts</span>
+                `;
+                list.appendChild(btn);
+            });
+            openModal('modalAward');
+        };
+
+        window.selectActionForGlobalAward = function(actionId) {
+            if(!tribeData.members || tribeData.members.length === 0) {
+                alert('Primero debes agregar integrantes a la familia.');
+                switchTab('members');
+                return;
+            }
+            const memberNames = tribeData.members.map((m, i) => `${i + 1}. ${m.avatar} ${m.name}`).join('\n');
+            const choice = prompt(`¿A quién le vas a otorgar esta acción?\n\n${memberNames}\n\nEscribe el número correspondiente:`);
+            if(!choice) return;
+
+            const index = parseInt(choice) - 1;
+            if(index >= 0 && index < tribeData.members.length) {
+                executeAward(tribeData.members[index].id, actionId);
+            }
+        };
+
+        async function executeAward(memberId, actionId) {
+            const m = tribeData.members.find(x => x.id === memberId);
+            const a = tribeData.actions.find(x => x.id === actionId);
+            if(!m || !a) return;
+
+            m.points = (m.points || 0) + a.points;
+            logHistory(`¡${m.name} ganó +${a.points} estrellas por "${a.title}"!`, 'award');
+
+            await syncTribeToFirestore();
+            closeModal('modalAward');
+
+            confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        }
+
+        window.openRedeemModal = function(rewardId) {
+            const r = tribeData.rewards.find(x => x.id === rewardId);
+            if(!r) return;
+
+            document.getElementById('redeemItemText').innerText = `Premio: ${r.emoji} ${r.title} (${r.cost} estrellas)`;
+            const list = document.getElementById('redeemMembersList');
+            list.innerHTML = '';
+
+            (tribeData.members || []).forEach(m => {
+                const canAfford = (m.points || 0) >= r.cost;
+                const btn = document.createElement('button');
+                btn.disabled = !canAfford;
+                btn.className = `w-full text-left rounded-xl p-3 border transition flex items-center justify-between gap-2 ${canAfford ? 'bg-amber-50/50 hover:bg-amber-100/80 border-amber-200 cursor-pointer' : 'bg-slate-100 opacity-60 border-slate-200 cursor-not-allowed'}`;
+                btn.onclick = () => executeRedeem(m.id, r.id);
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-2xl">${m.avatar}</span>
+                        <div>
+                            <div class="font-bold text-xs text-slate-800">${m.name}</div>
+                            <div class="text-[10px] font-semibold text-slate-500">Puntos actuales: ${m.points || 0} ⭐</div>
+                        </div>
+                    </div>
+                    <div>
+                        ${canAfford ? `<span class="bg-amber-500 text-white font-bold text-xs px-3 py-1 rounded-lg">Canjear</span>` : `<span class="text-[10px] text-rose-500 font-bold">Faltan ${r.cost - (m.points || 0)} pts</span>`}
+                    </div>
+                `;
+                list.appendChild(btn);
+            });
+            openModal('modalRedeem');
+        };
+
+        async function executeRedeem(memberId, rewardId) {
+            const m = tribeData.members.find(x => x.id === memberId);
+            const r = tribeData.rewards.find(x => x.id === rewardId);
+            if(!m || !r || (m.points || 0) < r.cost) return;
+
+            m.points -= r.cost;
+            logHistory(`🎉 ¡${m.name} canjeó "${r.title}" por ${r.cost} estrellas!`, 'redeem');
+
+            await syncTribeToFirestore();
+            closeModal('modalRedeem');
+
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+        }
+
+        window.openCustomActionModal = function() {
+            document.getElementById('actionName').value = '';
+            document.getElementById('actionEmoji').value = '🌟';
+            document.getElementById('actionPoints').value = '15';
+            document.getElementById('actionDesc').value = '';
+            openModal('modalCustomAction');
+        };
+
+        window.handleSaveAction = async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('actionName').value.trim();
+            const emoji = document.getElementById('actionEmoji').value.trim() || '🌟';
+            const pts = parseInt(document.getElementById('actionPoints').value) || 10;
+            const desc = document.getElementById('actionDesc').value.trim();
+
+            if(!name) return;
+            tribeData.actions = tribeData.actions || [];
+            tribeData.actions.push({
+                id: 'act_' + Date.now(),
+                title: `${tribeData.actions.length + 1}. ${emoji} ${name}`,
+                points: pts,
+                emoji: emoji,
+                desc: desc
+            });
+
+            logHistory(`Nueva acción agregada: "${name}" (+${pts} pts)`, 'info');
+            await syncTribeToFirestore();
+            closeModal('modalCustomAction');
+        };
+
+        window.openAddRewardModal = function() {
+            document.getElementById('rewardTitle').value = '';
+            document.getElementById('rewardEmoji').value = '🍦';
+            document.getElementById('rewardCost').value = '50';
+            document.getElementById('rewardDesc').value = '';
+            openModal('modalAddReward');
+        };
+
+        window.handleSaveReward = async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('rewardTitle').value.trim();
+            const emoji = document.getElementById('rewardEmoji').value.trim() || '🎁';
+            const cost = parseInt(document.getElementById('rewardCost').value) || 50;
+            const desc = document.getElementById('rewardDesc').value.trim();
+
+            if(!title) return;
+            tribeData.rewards = tribeData.rewards || [];
+            tribeData.rewards.push({
+                id: 'rew_' + Date.now(),
+                title: title,
+                cost: cost,
+                emoji: emoji,
+                desc: desc
+            });
+
+            logHistory(`Nuevo premio creado: "${title}" (${cost} estrellas)`, 'info');
+            await syncTribeToFirestore();
+            closeModal('modalAddReward');
+        };
+
+        function logHistory(text, type = 'info') {
+            tribeData.history = tribeData.history || [];
+            tribeData.history.push({
+                id: 'h_' + Date.now(),
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }),
+                text: text,
+                type: type
+            });
+        }
+
+        window.switchTab = function(tab) {
+            const tabs = ['members', 'actions', 'rewards', 'history'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const view = document.getElementById(`view-${t}`);
+                if(t === tab) {
+                    btn.className = "px-5 py-2.5 rounded-2xl font-bold text-sm transition flex items-center gap-2 bg-indigo-600 text-white shadow-md";
+                    view.classList.remove('hidden');
+                } else {
+                    btn.className = "px-5 py-2.5 rounded-2xl font-bold text-sm transition flex items-center gap-2 bg-white text-slate-600 hover:bg-slate-100";
+                    view.classList.add('hidden');
+                }
+            });
+        };
+    </script>
+</body>
+</html>
